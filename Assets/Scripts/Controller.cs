@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using System.Threading;
+using JetBrains.Annotations;
 
 public class Controller : MonoBehaviour
 {
@@ -16,6 +17,13 @@ public class Controller : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button Backspace;
     [SerializeField] private Button Submit;
+    [SerializeField] private GameObject Settings;
+    [SerializeField] private GameObject MuteAudio;
+    [SerializeField] private GameObject MoreInfo;
+    [SerializeField] private GameObject ExitMoreInfo;
+
+    [Header("More Info")]
+    [SerializeField] private GameObject MoreInfoPanel;
 
     [Header("Audio")]
     [SerializeField] private AudioClip sfxVerity;
@@ -174,16 +182,54 @@ public class Controller : MonoBehaviour
     public void onMute()
     {
         muteAudio = !muteAudio;
+
+        if (muteAudio) MuteAudio.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/volume");
+        if (!muteAudio) MuteAudio.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/speaker-filled-audio-tool");
     }
 
     public void onMoreInfo()
     {
-        // Implement
+        MoreInfoPanel.SetActive(true);
+
+        Animator[] animator = MoreInfoPanel.GetComponentsInChildren<Animator>();
+
+        bool isOpen = animator[0].GetBool("isOpen");
+        animator[0].SetBool("isOpen", !isOpen);
+    }
+
+    public void onMoreInfoExit()
+    {
+        Animator[] animator = MoreInfoPanel.GetComponentsInChildren<Animator>();
+
+        bool isOpen = animator[0].GetBool("isOpen");
+        animator[0].SetBool("isOpen", !isOpen);
+
+
     }
 
     public void onSettings()
     {
-        // Implement
+        Animator animator = Settings.GetComponent<Animator>();
+        bool isOpen = animator.GetBool("isOpen");
+        animator.SetBool("isOpen", !isOpen);
+
+        ToggleMute();
+        ToggleInfo();
+    }
+
+    public void ToggleInfo()
+    {
+        Animator animator = MoreInfo.GetComponent<Animator>();
+
+        bool isOpen = animator.GetBool("isOpen");
+        animator.SetBool("isOpen", !isOpen);
+    }
+
+    public void ToggleMute()
+    {
+        Animator animator = MuteAudio.GetComponent<Animator>();
+        bool isOpen = animator.GetBool("isOpen");
+        animator.SetBool("isOpen", !isOpen);
     }
 
     public void UpdateSubmit(int index)
