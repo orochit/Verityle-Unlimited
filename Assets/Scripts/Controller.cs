@@ -5,13 +5,25 @@ using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using System.Threading;
 
 public class Controller : MonoBehaviour
 {
+    [Header("Rows")]
     [SerializeField] public Transform rowsImages;
+    [SerializeField] public Transform rowsTable;
 
+    [Header("Buttons")]
     [SerializeField] private Button Backspace;
     [SerializeField] private Button Submit;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip sfxVerity;
+    [SerializeField] private AudioClip sfxCruelty;
+    [SerializeField] private AudioClip sfxLovity;
+    [SerializeField] private AudioClip sfxFalsity;
+
+    private AudioSource audioSource;
 
     public static Dictionary<int, string> verityList = new Dictionary<int, string>
     {
@@ -20,6 +32,8 @@ public class Controller : MonoBehaviour
         { 3, "Lovity" },
         { 4, "Falsity" }
     };
+
+    public static bool muteAudio = false;
 
     public event System.Action<int> OnIndexChanged;
 
@@ -46,6 +60,8 @@ public class Controller : MonoBehaviour
 
     private void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+
         Submit.interactable = false;
 
         OnIndexChanged += UpdateSubmit;
@@ -70,6 +86,7 @@ public class Controller : MonoBehaviour
     {
         if (currentIndex < 8)
         {
+            if (!muteAudio) audioSource.PlayOneShot(sfxVerity);
             Debug.Log("Adding Verity at index: " + currentIndex + " | Row: " + currentRow);
 
             Transform index = rowsImages.GetChild(currentRow).GetChild(currentIndex);
@@ -86,6 +103,7 @@ public class Controller : MonoBehaviour
     {
         if (currentIndex < 8)
         {
+            if (!muteAudio) audioSource.PlayOneShot(sfxCruelty);
             Debug.Log("Adding Cruelty at index: " + currentIndex + " | Row: " + currentRow);
 
             Transform index = rowsImages.GetChild(currentRow).GetChild(currentIndex);
@@ -102,6 +120,7 @@ public class Controller : MonoBehaviour
     {
         if (currentIndex < 8)
         {
+            if (!muteAudio) audioSource.PlayOneShot(sfxLovity);
             Debug.Log("Adding Lovity at index: " + currentIndex + " | Row: " + currentRow);
 
             Transform index = rowsImages.GetChild(currentRow).GetChild(currentIndex);
@@ -118,6 +137,8 @@ public class Controller : MonoBehaviour
     {
         if (currentIndex < 8)
         {
+            if (!muteAudio) audioSource.PlayOneShot(sfxFalsity);
+
             Debug.Log("Adding Falsity at index: " + currentIndex + " | Row: " + currentRow);
 
             Transform index = rowsImages.GetChild(currentRow).GetChild(currentIndex);
@@ -134,32 +155,9 @@ public class Controller : MonoBehaviour
     {
         if (currentIndex < 8) return;
 
-        bool isCorrect = true;
-
-        for (int i = 0; i < inputArray.Length; i++)
-        {
-            if (inputArray[i] != answerArray[i])
-            {
-                isCorrect = false;
-            }
-        }
-
-        if (!isCorrect)
-        {
-            Debug.Log("Incorrect!");
-            currentRow++;
-
-            rowsImages.GetChild(currentRow).gameObject.SetActive(true);
-
-            currentIndex = 0;
-        }
-        else Debug.Log("Correct!");
-
-        if (currentRow > rowsImages.childCount)
-        {
-            Debug.Log("Game Over!");
-        }
+        CheckAnswer();
     }
+
     public void onBackspace()
     {
         if (currentIndex > 0)
@@ -173,8 +171,98 @@ public class Controller : MonoBehaviour
         }
     }
 
+    public void onMute()
+    {
+        muteAudio = !muteAudio;
+    }
+
+    public void onMoreInfo()
+    {
+        // Implement
+    }
+
+    public void onSettings()
+    {
+        // Implement
+    }
+
     public void UpdateSubmit(int index)
     {
         Submit.interactable = index == inputArray.Length;
+    }
+
+    private void CheckAnswer()
+    {
+        bool isCorrect = true;
+
+        bool[] rightOnIndex = new bool[8];
+        int[] answerCounter = new int[5];
+
+        for (int i = 0; i < inputArray.Length; i++)
+        {
+            if (inputArray[i] != answerArray[i])
+            {
+                if (isCorrect) isCorrect = false;
+
+                answerCounter[answerArray[i]]++;
+                rightOnIndex[i] = false;
+            }
+            else
+            {
+                rightOnIndex[i] = true;
+            }
+        }
+
+        ColorOnCorrect(rightOnIndex);
+
+        ColorIfInArray(answerCounter, rightOnIndex);
+
+        if (!isCorrect)
+        {
+            Debug.Log("Incorrect!");
+            currentRow++;
+            rowsImages.GetChild(currentRow).gameObject.SetActive(true);
+            currentIndex = 0;
+        }
+
+        else Debug.Log("Correct!");
+
+
+        if (currentRow > rowsImages.childCount)
+        {
+            Debug.Log("Game Over!");
+        }
+    }
+
+    private void ColorOnCorrect(bool[] rightOnIndex)
+    {
+        for (int i = 0; i < rightOnIndex.Length; i++)
+        {
+            Transform index = rowsTable.GetChild(currentRow).GetChild(i);
+
+            if (rightOnIndex[i] == true)
+            {
+                index.GetComponent<Image>().color = Color.green;
+            }
+        }
+    }
+
+    private void ColorIfInArray(int[] answerCounter, bool[] rightOnIndex)
+    {
+        for (int i = 0; i < rightOnIndex.Length; i++)
+        {
+            Transform index = rowsTable.GetChild(currentRow).GetChild(i);
+
+            if (rightOnIndex[i] == true) continue;
+
+            int whichVerity = inputArray[i];
+
+            if (answerCounter[whichVerity] > 0)
+            {
+                answerCounter[whichVerity]--;
+                index.GetComponent<Image>().color = Color.yellow;
+            }
+            else index.GetComponent<Image>().color = Color.grey;
+        }
     }
 }
