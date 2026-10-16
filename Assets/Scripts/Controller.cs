@@ -1,12 +1,13 @@
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using UnityEditor.Rendering;
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.InputSystem;
 using System.Threading;
-using JetBrains.Annotations;
+using Unity.VisualScripting;
+using UnityEngine;
+using UnityEngine.Audio;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class Controller : MonoBehaviour
 {
@@ -22,14 +23,16 @@ public class Controller : MonoBehaviour
     [SerializeField] private GameObject MoreInfo;
     [SerializeField] private GameObject ExitMoreInfo;
 
-    [Header("More Info")]
+    [Header("Panels")]
     [SerializeField] private GameObject MoreInfoPanel;
+    [SerializeField] private GameObject GameOverPanel;
 
     [Header("Audio")]
     [SerializeField] private AudioClip sfxVerity;
     [SerializeField] private AudioClip sfxCruelty;
     [SerializeField] private AudioClip sfxLovity;
     [SerializeField] private AudioClip sfxFalsity;
+    [SerializeField] private AudioClip sfxKidsCheering;
 
     private AudioSource audioSource;
 
@@ -66,8 +69,22 @@ public class Controller : MonoBehaviour
 
     public static int currentRow = 0;
 
+
+    private void ResetGame()
+    {
+        answerArray = new int[8];
+        inputArray = new int[8];
+        currentIndex = 0;
+        currentRow = 0;
+
+        if (muteAudio) MuteAudio.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/volume");
+        if (!muteAudio) MuteAudio.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/speaker-filled-audio-tool");
+    }
+
     private void Start()
     {
+        ResetGame();
+
         audioSource = GetComponent<AudioSource>();
 
         Submit.interactable = false;
@@ -203,8 +220,6 @@ public class Controller : MonoBehaviour
 
         bool isOpen = animator[0].GetBool("isOpen");
         animator[0].SetBool("isOpen", !isOpen);
-
-
     }
 
     public void onSettings()
@@ -215,6 +230,11 @@ public class Controller : MonoBehaviour
 
         ToggleMute();
         ToggleInfo();
+    }
+
+    public void onNewGame()
+    {
+        SceneManager.LoadScene(1);
     }
 
     public void ToggleInfo()
@@ -266,18 +286,29 @@ public class Controller : MonoBehaviour
         if (!isCorrect)
         {
             Debug.Log("Incorrect!");
-            currentRow++;
-            rowsImages.GetChild(currentRow).gameObject.SetActive(true);
-            currentIndex = 0;
+
+            if (currentRow >= 5)
+            {
+                Debug.Log("Game Over!");
+                Backspace.interactable = false;
+                Submit.interactable = false;
+                GameOver();
+            }
+            else
+            {
+                currentRow++;
+                rowsImages.GetChild(currentRow).gameObject.SetActive(true);
+                currentIndex = 0;
+            }
         }
-
-        else Debug.Log("Correct!");
-
-
-        if (currentRow > rowsImages.childCount)
+        else
         {
-            Debug.Log("Game Over!");
+            audioSource.PlayOneShot(sfxKidsCheering);
+            Backspace.interactable = false;
+            Submit.interactable = false;
+            Debug.Log("Correct!");
         }
+
     }
 
     private void ColorOnCorrect(bool[] rightOnIndex)
@@ -310,5 +341,10 @@ public class Controller : MonoBehaviour
             }
             else index.GetComponent<Image>().color = Color.grey;
         }
+    }
+
+    private void GameOver()
+    {
+        GameOverPanel.SetActive(true);
     }
 }
