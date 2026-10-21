@@ -12,6 +12,6 @@ public class LoadNewGame : MonoBehaviour
     private IEnumerator Loading()
     {
         yield return new WaitForSeconds(0.3f);
-        SceneManager.LoadScene(0);
+        SceneManager.LoadScene("Game");
     }
 }
